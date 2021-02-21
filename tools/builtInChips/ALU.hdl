@@ -31,52 +31,43 @@
 // if (out == 0) sets zr = 1
 // if (out < 0)  sets ng = 1
 
-
 CHIP ALU {
-
-    IN  // 16-bit inputs:
-        x[16], y[16],
-        // Control bits:
-        zx, // Zero the x input
-        nx, // Negate the x input
-        zy, // Zero the y input
-        ny, // Negate the y input
-        f,  // Function code: 1 for add, 0 for and
-        no; // Negate the out output
-
-    OUT // 16-bit output
-        out[16],
-
-        // ALU output flags
-        zr, // 1 if out=0, 0 otherwise
-        ng; // 1 if out<0, 0 otherwise
-
-    BUILTIN ALU;
-    Mux16(a= x, b= false, sel= zx, out= zxop);
-    Not16(in= zxop, out= notzxop);
-    Mux16(a= zxop, b= notzxop, sel= nx, out= x1);
-    Mux16(a= y, b= false, sel= zy, out= zyop);
-    Not16(in= zyop, out= notzyop);
-    Mux16(a= zyop, b= notzyop, sel= ny, out= y1);
-    And16(a= x1, b= y1, out= x1Andy1);
+    IN  
+        x[16], y[16],  // 16-bit inputs        
+        zx, // zero the x input?
+        nx, // negate the x input?
+        zy, // zero the y input?
+        ny, // negate the y input?
+        f,  // compute out = x + y (if 1) or x & y (if 0)
+        no; // negate the out output?
+    OUT 
+        out[16], // 16-bit output
+        zr, // 1 if (out == 0), 0 otherwise
+        ng; // 1 if (out < 0),  0 otherwise
+    PARTS:
+   // Put you code here:
+   //Mux16 for x value output
+    Mux16(a= x, b= false, sel= zx, out= zxob);
+    Not16(in= zxob, out= notzxob);
+    Mux16(a= zxob, b= notzxob, sel= nx, out= x1);
+    //Mux16 for y value output
+    Mux16(a= y, b= false, sel= zy, out= zyob);
+    Not16(in= zyob, out= notzyob);
+    Mux16(a= zyob, b= notzyob, sel= ny, out= y1);
+    //Add16 of output x1 and y1
     Add16(a= x1, b= y1, out= x1ory1);
+    //And16 of output x1 and y1 
+    And16(a= x1, b= y1, out= x1Andy1);
+    //Mux16 for output of Add16 and And16
     Mux16(a= x1Andy1, b= x1ory1, sel= f, out= fxy);
     Not16(in= fxy, out= notfxy);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[0]= lsbByte, out[8]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[1]= lsbByte, out[9]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[2]= lsbByte, out[10]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[3]= lsbByte, out[11]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[4]= lsbByte, out[12]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[5]= lsbByte, out[13]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[6]= lsbByte, out[14]= msbByte);
-    Mux16(a= fxy, b= notfxy, sel= no, out= out, out[15]= ng, out[7]= lsbByte, out[15]= msbByte);
+    //output of ng
+    Mux16(a= fxy, b= notfxy, sel= no,out= out, out[0..7]= lsbByte, out[8..15]= msbByte, out[15]= ng);
+    //Or8Way of lsbByte and msbByte
     Or8Way(in=lsbByte, out= lsbcnt);
     Or8Way(in= msbByte, out= msbcnt);
-    Or8Way(a= lsbcnt, b= msbcnt, out= nzr);
+    //Or of lsbcnt and msbcnt
+    Or(a= lsbcnt, b= msbcnt, out= nzr);
+    //output of zr
     Not(in= nzr, out=zr);
-
-
-
-
-
 }
